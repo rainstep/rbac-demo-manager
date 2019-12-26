@@ -2,6 +2,9 @@ import Vue from "vue";
 import VueRouter from "vue-router";
 import Home from "../views/Home.vue";
 import User from "../views/User.vue";
+import Role from "../views/Role.vue";
+import Resource from "../views/Resource.vue";
+import Permission from "../views/Permission.vue";
 
 Vue.use(VueRouter);
 
@@ -24,6 +27,21 @@ const routes = [
     path: "/user",
     name: "user",
     component: User
+  },
+  {
+    path: "/role",
+    name: "role",
+    component: Role
+  },
+  {
+    path: "/resource",
+    name: "resource",
+    component: Resource
+  },
+  {
+    path: "/permission",
+    name: "permission",
+    component: Permission
   }
 ];
 

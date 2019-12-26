@@ -134,4 +134,19 @@ header:after {
 .el-aside .el-menu {
   border: none;
 }
+
+.toolbar {
+  margin-bottom: 20px;
+}
+.query-form {
+  margin-bottom: 20px;
+  padding-top: 20px;
+  padding-left: 20px;
+  background-color: #f2f2f2;
+}
+
+.data-pagination {
+  margin-top: 20px;
+  /*text-align: center;*/
+}
 </style>

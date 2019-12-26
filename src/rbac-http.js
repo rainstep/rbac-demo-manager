@@ -26,12 +26,14 @@ export default {
             if (code === RESULT_CODE_UNAUTHENTICATED) {
               // 跳转登录
             } else {
-              Message.error(response.data.msg);
+              let errorMsg = response.data.msg || "操作失败";
+              Message.error(errorMsg);
               reject(response);
             }
           }
         })
         .catch(response => {
+          console.error(response);
           Message.error(response.message);
           reject(response);
         });
@@ -42,7 +44,8 @@ export default {
       ...headers,
       "content-type": "application/x-www-form-urlencoded"
     };
-    if (param instanceof Object) param = qs.stringify(param);
+    if (param instanceof Object)
+      param = qs.stringify(param, { indices: false });
     return this.post(url, param, headers);
   },
   jsonPost(url, param, headers) {

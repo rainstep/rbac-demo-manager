@@ -1,5 +1,13 @@
 <template>
   <div class="main-content">
+    <div class="toolbar">
+      <el-button type="primary" icon="el-icon-edit" @click="handleAdd"
+        >新增</el-button
+      >
+      <el-button type="danger" icon="el-icon-delete" @click="batchDelete"
+        >批量删除</el-button
+      >
+    </div>
     <el-form class="query-form" inline>
       <el-form-item label="账号">
         <el-input v-model="searchUser.account" />
@@ -17,16 +25,23 @@
         />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="el-icon-search" @click="find(1)"
+        <el-button
+          type="primary"
+          icon="el-icon-search"
+          size="medium"
+          @click="find(1)"
           >搜索</el-button
-        >
-        <el-button type="primary" icon="el-icon-edit" @click="handleAdd"
-          >新增</el-button
         >
       </el-form-item>
     </el-form>
 
-    <el-table class="data-table" :data="userList" stripe border>
+    <el-table
+      :data="userList"
+      stripe
+      border
+      @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" />
       <el-table-column prop="userId" label="用户ID" />
       <el-table-column prop="userName" label="用户名" />
       <el-table-column prop="account" label="账号" />
@@ -48,8 +63,10 @@
       background
       :total="totalCount"
       :current-page="currentPageNum"
+      :page-size="pageSize"
       @size-change="pageSizeChange"
       @current-change="pageNumChange"
+      layout="total, sizes, prev, pager, next, jumper"
     />
 
     <el-dialog
@@ -58,15 +75,27 @@
       :visible.sync="editDialogVisible"
       @close="handleDialogClose"
     >
-      <el-form :model="editUser" ref="editForm" :rules="userRules">
+      <el-form
+        :model="editUser"
+        ref="editForm"
+        :rules="userRules"
+        label-width="80px"
+      >
         <el-form-item label="用户名" prop="userName">
-          <el-input v-model="editUser.userName"></el-input>
+          <el-input v-model="editUser.userName" placeholder="2 ~ 10个字符" />
         </el-form-item>
         <el-form-item label="账号" prop="account">
-          <el-input v-model="editUser.account"></el-input>
+          <el-input
+            v-model="editUser.account"
+            placeholder="以字母、下划线开头，只允许字母、数字和下划线，最少6位长度"
+          />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="editUser.password" type="password"></el-input>
+          <el-input
+            v-model="editUser.password"
+            type="password"
+            placeholder="只允许字母、数字和下划线，最少6位长度"
+          />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -90,31 +119,36 @@ export default {
     let validateAccount = (rule, value, callback) => {
       let result = regexUtils.checkAccount(value);
       if (result) callback();
-      else callback(new Error("账号格式错误"));
+      else
+        callback(
+          new Error(
+            "账号以字母、下划线开头，只允许字母、数字和下划线，最少6位长度"
+          )
+        );
     };
     // 密码验证
     let validatePassword = (rule, value, callback) => {
       let result = regexUtils.checkPassword(value);
       if (result) callback();
-      else callback(new Error("密码格式错误"));
+      else callback(new Error("密码只允许字母、数字和下划线，最少6位长度"));
     };
     return {
-      currentPageNum: 1,
-      pageSize: 10,
-      totalCount: 0,
       searchUser: {
         account: "",
         userName: "",
         createTime: []
       },
+      currentPageNum: 1,
+      pageSize: 10,
+      totalCount: 0,
       userList: [],
       editUser: {},
       userRules: {
         userName: {
           required: true,
-          min: 3,
+          min: 2,
           max: 10,
-          message: "长度在 3 到 10 个字符",
+          message: "用户名长度在2 ~ 10个字符",
           trigger: "blur"
         },
         account: {
@@ -128,7 +162,8 @@ export default {
           trigger: "blur"
         }
       },
-      editDialogVisible: false
+      editDialogVisible: false,
+      selectedUserList: []
     };
   },
   mounted() {
@@ -151,18 +186,20 @@ export default {
         pageNum: pageNum,
         pageSize: pageSize
       };
+      if (pageNum !== this.currentPageNum) this.currentPageNum = pageNum;
+      if (pageSize !== this.pageSize) this.pageSize = pageSize;
       rbacHttp.formPost(url, param).then(response => {
-        if (pageNum !== this.currentPageNum) this.currentPageNum = pageNum;
-        if (pageSize !== this.pageSize) this.pageSize = pageNum;
         this.userList = response.data.list;
         this.totalCount = response.data.totalCount;
       });
     },
     pageSizeChange(pageSize) {
+      console.log("pageSizeChange: %d", pageSize);
       this.pageSize = pageSize;
       this.find();
     },
     pageNumChange(pageNum) {
+      console.log("pageNumChange: %d", pageNum);
       this.currentPageNum = pageNum;
       this.find();
     },
@@ -198,6 +235,35 @@ export default {
           let param = { userId };
           rbacHttp.formPost(url, param).then(() => {
             this.$message.success("删除成功");
+            if (this.userList.length === 1 && this.currentPageNum > 1) {
+              this.currentPageNum--;
+            }
+            this.find();
+          });
+        })
+        .catch(() => {});
+    },
+    handleSelectionChange(values) {
+      this.selectedUserList = values;
+    },
+    batchDelete() {
+      if (this.selectedUserList.length === 0) {
+        this.$message.info("请选中要删除行的数据");
+        return;
+      }
+      this.$confirm("确定要删除吗？", "提示", { type: "warning" })
+        .then(() => {
+          let userIds = this.selectedUserList.map(item => item.userId);
+          let url = "/user/batchDelete";
+          let param = { userIds };
+          rbacHttp.formPost(url, param).then(() => {
+            this.$message.success("删除成功");
+            if (
+              this.userList.length === userIds.length &&
+              this.currentPageNum > 1
+            ) {
+              this.currentPageNum--;
+            }
             this.find();
           });
         })
@@ -207,22 +273,4 @@ export default {
 };
 </script>
 
-<style scoped>
-.main-content {
-  height: 100%;
-  overflow-y: auto;
-}
-.query-form {
-  margin-top: 15px;
-  padding-top: 20px;
-  padding-left: 20px;
-  background-color: #f2f2f2;
-}
-.data-table {
-  margin-top: 20px;
-}
-.data-pagination {
-  margin-top: 20px;
-  /*text-align: center;*/
-}
-</style>
+<style scoped></style>

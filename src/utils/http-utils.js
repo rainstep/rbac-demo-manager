@@ -14,6 +14,7 @@ export default {
           resolve(response.data);
         })
         .catch(response => {
+          console.error(response.toJSON());
           reject(response);
         });
     });
@@ -23,7 +24,8 @@ export default {
       ...headers,
       "content-type": "application/x-www-form-urlencoded"
     };
-    if (param instanceof Object) param = qs.stringify(param);
+    if (param instanceof Object)
+      param = qs.stringify(param, { indices: false });
     return this.post(url, param, headers);
   },
   jsonPost(url, param, headers) {
