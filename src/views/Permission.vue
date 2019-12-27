@@ -6,11 +6,48 @@
       >
     </div>
 
-    <el-table :data="pageData.permissionList" stripe border>
+    <el-form class="query-form" inline>
+      <el-form-item label="权限名">
+        <el-input v-model="searchParam.permissionName" />
+      </el-form-item>
+      <el-form-item label="权限编码">
+        <el-input v-model="searchParam.permissionCode" />
+      </el-form-item>
+      <el-form-item label="所属资源" prop="resourceId">
+        <el-select
+          v-model="searchParam.resourceId"
+          clearable
+          placeholder="请选择"
+        >
+          <el-option
+            v-for="resource in resourceList"
+            :key="resource.resourceId"
+            :label="resource.resourceName"
+            :value="resource.resourceId"
+          >
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button
+          type="primary"
+          icon="el-icon-search"
+          size="medium"
+          @click="find(1)"
+          >搜索</el-button
+        >
+      </el-form-item>
+    </el-form>
+
+    <el-table :data="pageData.list" stripe border>
       <el-table-column prop="permissionId" label="权限ID" />
       <el-table-column prop="permissionName" label="权限名" />
       <el-table-column prop="permissionCode" label="权限编码" />
-      <el-table-column prop="resourceId" label="所属资源" />
+      <el-table-column
+        prop="resourceId"
+        label="所属资源"
+        :formatter="resourceFormatter"
+      />
       <el-table-column label="操作">
         <template slot-scope="scope">
           <el-button size="mini" @click="handleEdit(scope.$index, scope.row)"
@@ -30,8 +67,8 @@
       class="data-pagination"
       background
       :total="pageData.totalCount"
-      :current-page="searchParams.pageNum"
-      :page-size="searchParams.pageSize"
+      :current-page="searchParam.pageNum"
+      :page-size="searchParam.pageSize"
       @size-change="pageSizeChange"
       @current-change="pageNumChange"
       layout="total, sizes, prev, pager, next, jumper"
@@ -58,8 +95,8 @@
         </el-form-item>
         <el-form-item label="权限编码" prop="permissionCode">
           <el-input
-              v-model="editPermission.permissionCode"
-              placeholder="以字母、下划线开头，只允许字母、数字和下划线，最少3位长度"
+            v-model="editPermission.permissionCode"
+            placeholder="以字母、下划线开头，只允许字母、数字和下划线，最少3位长度"
           />
         </el-form-item>
         <el-form-item label="所属资源" prop="resourceId">
@@ -106,7 +143,7 @@ export default {
     };
     return {
       resourceList: [],
-      searchParams: {
+      searchParam: {
         pageNum: 1,
         pageSize: 10
       },
@@ -137,24 +174,46 @@ export default {
       }
     };
   },
+  created() {
+    this.findResource();
+  },
   mounted() {
     this.find();
   },
   methods: {
-    find() {
-      let url = "/permission/list";
+    findResource() {
+      let url = "/resource/list";
       rbacHttp
-        .formPost(url, this.searchParams)
+        .formPost(url)
+        .then(response => (this.resourceList = response.data));
+    },
+    find(
+      pageNum = this.searchParam.pageNum,
+      pageSize = this.searchParam.pageSize
+    ) {
+      let url = "/permission/list";
+      if (pageNum !== this.searchParam.pageNum)
+        this.searchParam.pageNum = pageNum;
+      if (pageSize !== this.searchParam.pageSize)
+        this.searchParam.pageSize = pageSize;
+      rbacHttp
+        .formPost(url, this.searchParam)
         .then(response => (this.pageData = response.data));
+    },
+    resourceFormatter(row) {
+      let resultItem = this.resourceList.find(
+        item => item.resourceId === row.resourceId
+      );
+      return resultItem ? resultItem.resourceName : "未知";
     },
     pageSizeChange(pageSize) {
       console.log("pageSizeChange: %d", pageSize);
-      this.searchParams.pageSize = pageSize;
+      this.searchParam.pageSize = pageSize;
       this.find();
     },
     pageNumChange(pageNum) {
       console.log("pageNumChange: %d", pageNum);
-      this.searchParams.pageNum = pageNum;
+      this.searchParam.pageNum = pageNum;
       this.find();
     },
     handleAdd() {
@@ -180,7 +239,7 @@ export default {
     },
     handleDialogClose() {
       this.editPermission = {};
-      this.$refs["editForm"].resetFields();
+      this.$refs["editForm"].clearValidate();
     },
     del(permissionId) {
       this.$confirm("确定要删除吗？", "提示", { type: "warning" })

@@ -9,7 +9,11 @@
     <el-table :data="resourceList" stripe border>
       <el-table-column prop="resourceId" label="资源ID" />
       <el-table-column prop="resourceName" label="资源名" />
-      <el-table-column prop="resourceType" label="资源类型" />
+      <el-table-column
+        prop="resourceType"
+        :formatter="typeFormatter"
+        label="资源类型"
+      />
       <el-table-column label="操作">
         <template slot-scope="scope">
           <el-button size="mini" @click="handleEdit(scope.$index, scope.row)"
@@ -108,6 +112,12 @@ export default {
         .formPost(url)
         .then(response => (this.resourceList = response.data));
     },
+    typeFormatter(row) {
+      let resultItem = this.resourceTypeList.find(
+        item => item.type === row.resourceType
+      );
+      return resultItem ? resultItem.name : "未知";
+    },
     handleAdd() {
       this.editDialogVisible = true;
     },
@@ -131,7 +141,7 @@ export default {
     },
     handleDialogClose() {
       this.editResource = {};
-      this.$refs["editForm"].resetFields();
+      this.$refs["editForm"].clearValidate();
     },
     del(resourceId) {
       this.$confirm("确定要删除吗？", "提示", { type: "warning" })

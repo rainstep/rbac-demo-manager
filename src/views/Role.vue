@@ -122,7 +122,7 @@ export default {
     },
     handleDialogClose() {
       this.editRole = {};
-      this.$refs["editForm"].resetFields();
+      this.$refs["editForm"].clearValidate();
     },
     del(roleId) {
       this.$confirm("确定要删除吗？", "提示", { type: "warning" })

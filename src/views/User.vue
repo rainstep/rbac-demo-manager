@@ -8,16 +8,17 @@
         >批量删除</el-button
       >
     </div>
+
     <el-form class="query-form" inline>
       <el-form-item label="账号">
-        <el-input v-model="searchUser.account" />
+        <el-input v-model="searchParam.account" />
       </el-form-item>
       <el-form-item label="用户名">
-        <el-input v-model="searchUser.userName" />
+        <el-input v-model="searchParam.userName" />
       </el-form-item>
       <el-form-item label="创建时间">
         <el-date-picker
-          v-model="searchUser.createTime"
+          v-model="searchParam.createTime"
           type="datetimerange"
           range-separator="至"
           start-placeholder="开始时间"
@@ -36,7 +37,7 @@
     </el-form>
 
     <el-table
-      :data="userList"
+      :data="pageData.list"
       stripe
       border
       @selection-change="handleSelectionChange"
@@ -48,8 +49,9 @@
       <el-table-column prop="createTime" label="创建时间" />
       <el-table-column label="操作">
         <template slot-scope="scope">
-          <el-button size="mini" @click="handleEdit(scope.$index, scope.row)"
-            >编辑</el-button
+          <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button size="mini" @click="handleUserRole(scope.row)"
+            >分配角色</el-button
           >
           <el-button size="mini" type="danger" @click="del(scope.row.userId)"
             >删除</el-button
@@ -61,9 +63,9 @@
     <el-pagination
       class="data-pagination"
       background
-      :total="totalCount"
-      :current-page="currentPageNum"
-      :page-size="pageSize"
+      :total="pageData.totalCount"
+      :current-page="searchParam.pageNum"
+      :page-size="searchParam.pageSize"
       @size-change="pageSizeChange"
       @current-change="pageNumChange"
       layout="total, sizes, prev, pager, next, jumper"
@@ -74,6 +76,7 @@
       :close-on-click-modal="false"
       :visible.sync="editDialogVisible"
       @close="handleDialogClose"
+      width="600px"
     >
       <el-form
         :model="editUser"
@@ -101,6 +104,34 @@
       <div slot="footer" class="dialog-footer">
         <el-button @click="editDialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="save">确 定</el-button>
+      </div>
+    </el-dialog>
+
+    <el-dialog
+      title="用户角色分配"
+      :close-on-click-modal="false"
+      :visible.sync="editUserRoleDialogVisible"
+      width="400px"
+    >
+      <el-form :model="editUserRole" label-width="80px">
+        <el-select
+          v-model="editUserRole.roleIds"
+          multiple
+          clearable
+          placeholder="请选择"
+        >
+          <el-option
+            v-for="role in roleList"
+            :key="role.roleId"
+            :label="role.roleName"
+            :value="role.roleId"
+          >
+          </el-option>
+        </el-select>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="editUserRoleDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="saveUserRole">确 定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -133,15 +164,17 @@ export default {
       else callback(new Error("密码只允许字母、数字和下划线，最少6位长度"));
     };
     return {
-      searchUser: {
+      searchParam: {
         account: "",
         userName: "",
-        createTime: []
+        createTime: [],
+        pageNum: 1,
+        pageSize: 10
       },
-      currentPageNum: 1,
-      pageSize: 10,
-      totalCount: 0,
-      userList: [],
+      pageData: {
+        totalCount: 0,
+        userList: []
+      },
       editUser: {},
       userRules: {
         userName: {
@@ -163,6 +196,12 @@ export default {
         }
       },
       editDialogVisible: false,
+
+      roleList: [],
+      editUserRole: {
+        roleIds: []
+      },
+      editUserRoleDialogVisible: false,
       selectedUserList: []
     };
   },
@@ -170,43 +209,41 @@ export default {
     this.find();
   },
   methods: {
-    find(pageNum = this.currentPageNum, pageSize = this.pageSize) {
+    find(
+      pageNum = this.searchParam.pageNum,
+      pageSize = this.searchParam.pageSize
+    ) {
       let url = "/user/list";
       let bCreateTime = null;
       let eCreateTime = null;
-      if (this.searchUser.createTime[0])
-        bCreateTime = dateUtils.formatDateTime(this.searchUser.createTime[0]);
-      if (this.searchUser.createTime[1])
-        eCreateTime = dateUtils.formatDateTime(this.searchUser.createTime[1]);
-      let param = {
-        account: this.searchUser.account,
-        userName: this.searchUser.userName,
-        bCreateTime: bCreateTime,
-        eCreateTime: eCreateTime,
-        pageNum: pageNum,
-        pageSize: pageSize
-      };
-      if (pageNum !== this.currentPageNum) this.currentPageNum = pageNum;
-      if (pageSize !== this.pageSize) this.pageSize = pageSize;
-      rbacHttp.formPost(url, param).then(response => {
-        this.userList = response.data.list;
-        this.totalCount = response.data.totalCount;
+      if (this.searchParam.createTime[0])
+        bCreateTime = dateUtils.formatDateTime(this.searchParam.createTime[0]);
+      if (this.searchParam.createTime[1])
+        eCreateTime = dateUtils.formatDateTime(this.searchParam.createTime[1]);
+      this.searchParam.bCreateTime = bCreateTime;
+      this.searchParam.eCreateTime = eCreateTime;
+      if (pageNum !== this.searchParam.pageNum)
+        this.searchParam.pageNum = pageNum;
+      if (pageSize !== this.searchParam.pageSize)
+        this.searchParam.pageSize = pageSize;
+      rbacHttp.formPost(url, this.searchParam).then(response => {
+        this.pageData = response.data;
       });
     },
     pageSizeChange(pageSize) {
       console.log("pageSizeChange: %d", pageSize);
-      this.pageSize = pageSize;
+      this.searchParam.pageSize = pageSize;
       this.find();
     },
     pageNumChange(pageNum) {
       console.log("pageNumChange: %d", pageNum);
-      this.currentPageNum = pageNum;
+      this.searchParam.pageNum = pageNum;
       this.find();
     },
     handleAdd() {
       this.editDialogVisible = true;
     },
-    handleEdit(index, row) {
+    handleEdit(row) {
       this.editUser = row;
       this.editDialogVisible = true;
     },
@@ -226,7 +263,7 @@ export default {
     },
     handleDialogClose() {
       this.editUser = {};
-      this.$refs["editForm"].resetFields();
+      this.$refs["editForm"].clearValidate();
     },
     del(userId) {
       this.$confirm("确定要删除吗？", "提示", { type: "warning" })
@@ -236,12 +273,43 @@ export default {
           rbacHttp.formPost(url, param).then(() => {
             this.$message.success("删除成功");
             if (this.userList.length === 1 && this.currentPageNum > 1) {
-              this.currentPageNum--;
+              this.searchParam.pageNum--;
             }
             this.find();
           });
         })
         .catch(() => {});
+    },
+    handleUserRole(row) {
+      if (this.roleList.length == 0) {
+        this.findRole();
+      }
+      let userId = row.userId;
+      let url = "/user/userRoleIdList";
+      let param = { userId };
+      rbacHttp
+        .formPost(url, param)
+        .then(response => {
+          this.editUserRole.userId = userId;
+          this.editUserRole.roleIds = response.data;
+          this.editUserRoleDialogVisible = true;
+        })
+        .catch(() => {});
+    },
+    findRole() {
+      let url = "/role/list";
+      rbacHttp.formPost(url).then(response => (this.roleList = response.data));
+    },
+    saveUserRole() {
+      let param = {
+        ...this.editUserRole
+      };
+      let url = "user/saveUserRole";
+      rbacHttp.formPost(url, param).then(() => {
+        this.$message.success("操作成功");
+        this.find();
+        this.editUserRoleDialogVisible = false;
+      });
     },
     handleSelectionChange(values) {
       this.selectedUserList = values;
