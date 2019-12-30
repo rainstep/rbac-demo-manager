@@ -196,7 +196,6 @@ export default {
         }
       },
       editDialogVisible: false,
-
       roleList: [],
       editUserRole: {
         roleIds: []
@@ -285,7 +284,7 @@ export default {
         this.findRole();
       }
       let userId = row.userId;
-      let url = "/user/userRoleIdList";
+      let url = "/user/roleIdList";
       let param = { userId };
       rbacHttp
         .formPost(url, param)
@@ -297,14 +296,14 @@ export default {
         .catch(() => {});
     },
     findRole() {
-      let url = "/role/list";
+      let url = "/role/listAll";
       rbacHttp.formPost(url).then(response => (this.roleList = response.data));
     },
     saveUserRole() {
       let param = {
         ...this.editUserRole
       };
-      let url = "user/saveUserRole";
+      let url = "user/roleSave";
       rbacHttp.formPost(url, param).then(() => {
         this.$message.success("操作成功");
         this.find();

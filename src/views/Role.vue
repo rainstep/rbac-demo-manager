@@ -15,6 +15,9 @@
           <el-button size="mini" @click="handleEdit(scope.$index, scope.row)"
             >编辑</el-button
           >
+          <el-button size="mini" @click="handleRolePermission(scope.row)"
+            >分配权限</el-button
+          >
           <el-button size="mini" type="danger" @click="del(scope.row.roleId)"
             >删除</el-button
           >
@@ -47,6 +50,41 @@
       <div slot="footer" class="dialog-footer">
         <el-button @click="editDialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="save">确 定</el-button>
+      </div>
+    </el-dialog>
+
+    <el-dialog
+      title="角色权限分配"
+      :close-on-click-modal="false"
+      :visible.sync="editRolePermissionDialogVisible"
+      width="400px"
+    >
+      <el-form :model="editRolePermission" label-width="80px">
+        <el-select
+          v-model="editRolePermission.permissionIds"
+          multiple
+          clearable
+          placeholder="请选择"
+        >
+          <el-option-group
+            v-for="resource in resourcePermissionList"
+            :key="resource.resourceId"
+            :label="resource.resourceName"
+          >
+            <el-option
+              v-for="permission in resource.permissionList"
+              :key="permission.permissionId"
+              :label="permission.permissionName"
+              :value="permission.permissionId"
+            />
+          </el-option-group>
+        </el-select>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="editRolePermissionDialogVisible = false"
+          >取 消</el-button
+        >
+        <el-button type="primary" @click="saveRolePermission">确 定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -88,7 +126,12 @@ export default {
           validator: validateRoleCode,
           trigger: "blur"
         }
-      }
+      },
+      resourcePermissionList: [],
+      editRolePermission: {
+        permissionIds: []
+      },
+      editRolePermissionDialogVisible: false
     };
   },
   mounted() {
@@ -96,7 +139,7 @@ export default {
   },
   methods: {
     find() {
-      let url = "/role/list";
+      let url = "/role/listAll";
       rbacHttp.formPost(url).then(response => (this.roleList = response.data));
     },
     handleAdd() {
@@ -135,6 +178,39 @@ export default {
           });
         })
         .catch(() => {});
+    },
+    handleRolePermission(row) {
+      if (this.resourcePermissionList.length == 0) {
+        this.findPermissionTree();
+      }
+      let roleId = row.roleId;
+      let url = "/role/permissionIdList";
+      let param = { roleId };
+      rbacHttp
+        .formPost(url, param)
+        .then(response => {
+          this.editRolePermission.roleId = roleId;
+          this.editRolePermission.permissionIds = response.data;
+          this.editRolePermissionDialogVisible = true;
+        })
+        .catch(() => {});
+    },
+    findPermissionTree() {
+      let url = "/permission/treeList";
+      rbacHttp
+        .formPost(url)
+        .then(response => (this.resourcePermissionList = response.data));
+    },
+    saveRolePermission() {
+      let param = {
+        ...this.editRolePermission
+      };
+      let url = "role/permissionSave";
+      rbacHttp.formPost(url, param).then(() => {
+        this.$message.success("操作成功");
+        this.find();
+        this.editRolePermissionDialogVisible = false;
+      });
     }
   }
 };
