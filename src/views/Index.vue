@@ -100,6 +100,7 @@ export default {
     logout() {
       let url = "/user/logout";
       rbacHttp.formPost(url).then(() => {
+        localStorage.removeItem("currentUser");
         this.$router.push("/login");
       });
     }

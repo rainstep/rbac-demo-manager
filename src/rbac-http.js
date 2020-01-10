@@ -30,12 +30,12 @@ export default {
           if (code === RESULT_CODE_SUCCESS) {
             resolve(response.data);
           } else {
+            let errorMsg = response.data.msg || "操作失败";
+            Message.error(errorMsg);
             if (code === RESULT_CODE_UNAUTHENTICATED) {
               // 跳转登录
               router.push("/login");
             } else {
-              let errorMsg = response.data.msg || "操作失败";
-              Message.error(errorMsg);
               reject(response);
             }
           }
