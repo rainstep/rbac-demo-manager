@@ -140,7 +140,9 @@ export default {
   methods: {
     find() {
       let url = "/role/listAll";
-      rbacHttp.formPost(url).then(response => (this.roleList = response.data));
+      rbacHttp.formPost(url).then(response => {
+        this.roleList = response.data;
+      });
     },
     handleAdd() {
       this.editDialogVisible = true;

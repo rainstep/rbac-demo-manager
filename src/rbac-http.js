@@ -1,6 +1,8 @@
 import axios from "axios";
 import qs from "qs";
 import { Message } from "element-ui";
+import router from "./router";
+import store from "./store";
 
 const RBAC_BASE_URL = "http://localhost:9910/rbac/";
 const RESULT_CODE_SUCCESS = 1; // 成功
@@ -11,6 +13,11 @@ let rbacAxios = axios.create({ baseURL: RBAC_BASE_URL });
 
 export default {
   post(url, param, headers) {
+    let token = store.getters.token;
+    headers = {
+      ...headers,
+      token
+    };
     return new Promise((resolve, reject) => {
       rbacAxios({
         method: "post",
@@ -25,6 +32,7 @@ export default {
           } else {
             if (code === RESULT_CODE_UNAUTHENTICATED) {
               // 跳转登录
+              router.push("/login");
             } else {
               let errorMsg = response.data.msg || "操作失败";
               Message.error(errorMsg);

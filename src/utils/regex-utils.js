@@ -4,8 +4,8 @@ const MOBILE_REGEX = /^1[3-9]\d{9}$/;
 // 邮箱
 const EMAIL_REGEX = /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/;
 
-// 账号以字母、下划线开头，只允许字母、数字和下划线，最少6位长度。
-const ACCOUNT_REGEX = /^[A-Za-z_]+\w{5,}/;
+// 账号以字母、下划线开头，只允许字母、数字和下划线，最少5位长度。
+const ACCOUNT_REGEX = /^[A-Za-z_]+\w{4,}/;
 
 // 密码只允许字母、数字和下划线，最少6位长度。
 const PASSWORD_REGEX = /\w{6,}/;

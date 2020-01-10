@@ -90,7 +90,7 @@
         <el-form-item label="账号" prop="account">
           <el-input
             v-model="editUser.account"
-            placeholder="以字母、下划线开头，只允许字母、数字和下划线，最少6位长度"
+            placeholder="以字母、下划线开头，只允许字母、数字和下划线，最少5位长度"
           />
         </el-form-item>
         <el-form-item label="密码" prop="password">
@@ -153,7 +153,7 @@ export default {
       else
         callback(
           new Error(
-            "账号以字母、下划线开头，只允许字母、数字和下划线，最少6位长度"
+            "账号以字母、下划线开头，只允许字母、数字和下划线，最少5位长度"
           )
         );
     };
@@ -215,10 +215,16 @@ export default {
       let url = "/user/list";
       let bCreateTime = null;
       let eCreateTime = null;
-      if (this.searchParam.createTime[0])
-        bCreateTime = dateUtils.formatDateTime(this.searchParam.createTime[0]);
-      if (this.searchParam.createTime[1])
-        eCreateTime = dateUtils.formatDateTime(this.searchParam.createTime[1]);
+      if (this.searchParam.createTime) {
+        if (this.searchParam.createTime[0])
+          bCreateTime = dateUtils.formatDateTime(
+            this.searchParam.createTime[0]
+          );
+        if (this.searchParam.createTime[1])
+          eCreateTime = dateUtils.formatDateTime(
+            this.searchParam.createTime[1]
+          );
+      }
       this.searchParam.bCreateTime = bCreateTime;
       this.searchParam.eCreateTime = eCreateTime;
       if (pageNum !== this.searchParam.pageNum)
@@ -326,10 +332,10 @@ export default {
           rbacHttp.formPost(url, param).then(() => {
             this.$message.success("删除成功");
             if (
-              this.userList.length === userIds.length &&
-              this.currentPageNum > 1
+              this.pageData.list.length === userIds.length &&
+              this.searchParam.pageNum > 1
             ) {
-              this.currentPageNum--;
+              this.searchParam.pageNum--;
             }
             this.find();
           });
