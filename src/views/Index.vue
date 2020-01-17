@@ -8,7 +8,7 @@
       />
       <el-dropdown class="user-tools" trigger="click" @command="handleCommand">
         <span class="el-dropdown-link">
-          {{$store.getters.currentUser.userName}}<i class="el-icon-arrow-down el-icon--right"></i>
+          {{ currentUserName }}<i class="el-icon-arrow-down el-icon--right" />
         </span>
         <el-dropdown-menu slot="dropdown">
           <el-dropdown-item command="logout">注销</el-dropdown-item>
@@ -25,34 +25,34 @@
           active-text-color="#ffd04b"
         >
           <el-menu-item index="/">
-            <i class="el-icon-s-home"></i>
+            <i class="el-icon-s-home" />
             <span slot="title">首页</span>
           </el-menu-item>
           <el-submenu index="/sys">
             <template slot="title">
-              <i class="el-icon-setting"></i>
+              <i class="el-icon-setting" />
               <span>系统管理</span>
             </template>
             <el-menu-item index="/user">
-              <i class="el-icon-user"></i>
+              <i class="el-icon-user" />
               <span>用户管理</span>
             </el-menu-item>
             <el-menu-item index="/role">
-              <i class="el-icon-s-custom"></i>
+              <i class="el-icon-s-custom" />
               <span>角色管理</span>
             </el-menu-item>
             <el-menu-item index="/resource">
-              <i class="el-icon-folder-opened"></i>
+              <i class="el-icon-folder-opened" />
               <span>资源管理</span>
             </el-menu-item>
             <el-menu-item index="/permission">
-              <i class="el-icon-edit-outline"></i>
+              <i class="el-icon-edit-outline" />
               <span>权限管理</span>
             </el-menu-item>
           </el-submenu>
           <el-submenu index="3">
             <template slot="title">
-              <i class="el-icon-menu"></i>
+              <i class="el-icon-menu" />
               <span>导航三</span>
             </template>
             <el-menu-item index="3-1">导航 3-1</el-menu-item>
@@ -87,10 +87,21 @@
 </template>
 
 <script>
-  import rbacHttp from "@/rbac-http.js";
+import rbacHttp from "@/rbac-http.js";
 
 export default {
   name: "Index",
+  data() {
+    return {
+      currentUser: {}
+    };
+  },
+  computed: {
+    currentUserName() {
+      let currentUser = this.$store.getters.currentUser;
+      return currentUser ? currentUser.userName : "";
+    }
+  },
   methods: {
     handleCommand(command) {
       if (command === "logout") {
@@ -101,6 +112,7 @@ export default {
       let url = "/user/logout";
       rbacHttp.formPost(url).then(() => {
         localStorage.removeItem("currentUser");
+        this.$store.state.currentUserStr = null;
         this.$router.push("/login");
       });
     }
@@ -134,7 +146,11 @@ header:after {
   margin-top: 20px;
 }
 .user-tools > .el-dropdown-link {
+  cursor: pointer;
   color: #fff;
+}
+.el-icon-arrow-down {
+  font-size: 12px;
 }
 
 .el-aside {
